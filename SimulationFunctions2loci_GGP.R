@@ -289,3 +289,35 @@ lines(smoothingSpline)
 title(main="Neutral allele fixation depending on intensity of selection")
 
 
+## Varying genetic distance between 2 loci with the recombination rate
+
+# Haldane mapping function (to convert genetic distance in recombination rates)
+dist = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5)
+rec2 = 1/2*(1-exp(-2*dist))
+
+freq2 <- function(s,rec) {
+  final = numeric(length(rec))
+  for (i in (1:length(rec))) {
+    results =logical(10)
+    for (repetition in (1:10)) {
+      fit.matrix <- fitness(0.5,s,0.5,0,0,0,0,0) # Two loci with additive selection
+      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec[i],mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 400)
+      results[repetition] <- (sim$a[400] >= 0.95)
+    }
+    final[i] <- mean(results)
+  }
+  return(final)
+}
+
+s = 0.04
+final = freq2(s = s,rec = rec2)
+log_dist = log(dist)
+smoothingSpline = smooth.spline(x = log_dist, y = final, spar=0.35)
+plot(log_dist,final, xlab="Genetic distance", ylab="Fixation probability")
+lines(smoothingSpline)
+title(main="Neutral allele fixation depending on genetic distance between loci")
+
+# Analyse bof bof, pour le recombination rate il vaut mieux regarder le temps de fixation en fonction de la distance génétique
+
+
+
