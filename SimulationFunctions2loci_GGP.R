@@ -2,7 +2,7 @@
 # Sylvain Glémin 2023
 # sylvain.glemin@univ-rennes.fr
 
-
+library(ggplot2)
 
 # Notation
 # Gametes 1:A0B0 2:A0B1 3:A1B0 4:A1B1
@@ -249,39 +249,43 @@ simulation <- function(geno0,Npop,self,rec,mu11,mu12,mu21,mu22,fit,Tmax){
 # Example
 # set.seed(123)
 
-# Graphique pour taux de recombinaison non nul
+Npop = 1000   # population size
+nb = 40      # number of s values considered
+rec = 0.01   # recombination rate
 
+# 1 example of temporal evolution of neutral allele frequency
+
+fit.matrix <- fitness(0.5,0.1,0.5,0,0,0,0,0) # Two loci with additive selection
+sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,0.5*0.005,0,0,0,0.25*0.995,0.25*0.005,0),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 400)
+plot(NULL,xlim = c(0,200),ylim=c(-0.1,1), xlab = "Generations", ylab = "Allele frequencies")
+lines(sim$a,col="darkblue")
+lines(sim$b,col="orange")
+lines(sim$LD,col="black")
+abline(0,0,lty=2)
+
+# Fixation probability graph for different values of s
 
 freq <- function(nb,rec) {
-  s = c(1:10)/nb
+  s = c(1:nb)/(5*nb)
   final = numeric(length(s))
   for (i in (1:length(s))) {
-    results =logical(20)
-    for (repetition in (1:20)) {
+    results =logical(10)
+    for (repetition in (1:10)) {
       fit.matrix <- fitness(0.5,s[i],0.5,0,0,0,0,0) # Two loci with additive selection
-      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = 1000,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 300)
-      results[repetition] <- (sim$a[299] >= 0.95)
+      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 400)
+      results[repetition] <- (sim$a[400] >= 0.95)
     }
     final[i] <- mean(results)
   }
   return(final)
 }
 
-nb = 50
-rec = 0.5
+# rapport = s/rec
+s = c(1:nb)/(5*nb)
+final = freq(nb = nb,rec = rec)
+smoothingSpline = smooth.spline(x = s, y = final, spar=0.35)
+plot(s,final,  xlab="Selection coefficient", ylab="Fixation probability",xlim = c(0,0.2))
+lines(smoothingSpline)
+title(main="Neutral allele fixation depending on intensity of selection")
 
-rapport = s/rec
-final = freq(nb,rec)
-plot(x = rapport, y = final)
-
-
-
-
-fit.matrix <- fitness(0.5,-0.1,0.5,0,0,0,0,0) # Two loci with additive selection
-sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,0.5*0.005,0,0,0,0.25*0.995,0.25*0.005,0),Npop = 100000,self = 0,rec=0.01,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 200)
-plot(NULL,xlim = c(0,200),ylim=c(-0.1,1))
-lines(sim$a,col="lightblue")
-lines(sim$b,col="orange")
-lines(sim$LD,col="black")
-abline(0,0,lty=2)
 
