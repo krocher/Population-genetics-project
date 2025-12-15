@@ -104,7 +104,7 @@ reproduction <- function(geno,self,rec) {
   g23 <- self*(G23*(1-rec)^2+G14*rec^2)/2 + (1-self)*2*X2*X3
   newgeno <- c(g11,g12,g13,g14,g22,g23,g24,g33,g34,g44)
   return(newgeno)
-  }
+}
 
 
 
@@ -253,21 +253,21 @@ simulation <- function(geno0,Npop,self,rec,mu11,mu12,mu21,mu22,fit,Tmax){
 
 
 freq <- function(nb,rec) {
-  s = c(1:nb)/nb
-  final = numeric(nb)
-  for (i in (1:nb)) {
+  s = c(1:10)/nb
+  final = numeric(length(s))
+  for (i in (1:length(s))) {
     results =logical(20)
     for (repetition in (1:20)) {
       fit.matrix <- fitness(0.5,s[i],0.5,0,0,0,0,0) # Two loci with additive selection
-      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = 100000,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 300)
+      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = 1000,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 300)
       results[repetition] <- (sim$a[299] >= 0.95)
-      }
+    }
     final[i] <- mean(results)
   }
   return(final)
 }
 
-nb = 40
+nb = 50
 rec = 0.5
 
 rapport = s/rec
@@ -277,10 +277,11 @@ plot(x = rapport, y = final)
 
 
 
-fit.matrix <- fitness(0.5,0.1,0.5,0,0,0,0,0) # Two loci with additive selection
-sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,0.5*0.005,0,0,0,0.25*0.995,0.25*0.005,0),Npop = 100000,self = 0,rec=0,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 200)
+fit.matrix <- fitness(0.5,-0.1,0.5,0,0,0,0,0) # Two loci with additive selection
+sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,0.5*0.005,0,0,0,0.25*0.995,0.25*0.005,0),Npop = 100000,self = 0,rec=0.01,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 200)
 plot(NULL,xlim = c(0,200),ylim=c(-0.1,1))
 lines(sim$a,col="lightblue")
 lines(sim$b,col="orange")
 lines(sim$LD,col="black")
 abline(0,0,lty=2)
+
