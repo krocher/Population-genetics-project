@@ -292,32 +292,66 @@ title(main="Neutral allele fixation depending on intensity of selection")
 ## Varying genetic distance between 2 loci with the recombination rate
 
 # Haldane mapping function (to convert genetic distance in recombination rates)
-dist = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5)
+dist = c(10e-5, 5*10e-5, 10e-4, 5*10e-4, 10e-3, 10e-2, 0.1)
 rec2 = 1/2*(1-exp(-2*dist))
+rec3 = seq(10e-5,10e-4,by = 5*10e-6)
+Tmax = 1000
 
-freq2 <- function(s,rec) {
+
+freq2 <- function(s,rec,Tmax) {
   final = numeric(length(rec))
   for (i in (1:length(rec))) {
-    results =logical(10)
-    for (repetition in (1:10)) {
+    results =logical(50)
+    for (repetition in (1:50)) {
       fit.matrix <- fitness(0.5,s,0.5,0,0,0,0,0) # Two loci with additive selection
-      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec[i],mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 400)
-      results[repetition] <- (sim$a[400] >= 0.95)
+      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec[i],mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = Tmax)
+      results[repetition] <- any(sim$a >= 0.99)
+      
     }
     final[i] <- mean(results)
   }
   return(final)
 }
 
-s = 0.04
-final = freq2(s = s,rec = rec2)
-log_dist = log(dist)
-smoothingSpline = smooth.spline(x = log_dist, y = final, spar=0.35)
-plot(log_dist,final, xlab="Genetic distance", ylab="Fixation probability")
-lines(smoothingSpline)
-title(main="Neutral allele fixation depending on genetic distance between loci")
 
 # Analyse bof bof, pour le recombination rate il vaut mieux regarder le temps de fixation en fonction de la distance génétique
 
+s = 0.01
 
+
+final = freq2(s = s,rec = rec3,Tmax = Tmax)
+log_dist = log(dist)
+smoothingSpline = smooth.spline(x = rec3, y = final, spar=0.35)
+plot(rec3,final, xlab="Recombination rate", ylab="Fixation probability")
+lines(smoothingSpline)
+title(main="Neutral allele fixation depending on genetic distance between loci")
+
+library(BBmisc)
+
+# Meilleure analyse: calcul temps fixation
+time <- function(s,rec,Tmax) {
+  final = numeric(length(rec))
+  for (i in (1:length(rec))) {
+    results =numeric(10)
+    for (repetition in (1:10)) {
+      fit.matrix <- fitness(0.5,s,0.5,0,0,0,0,0) # Two loci with additive selection
+      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop*10,self = 0,rec=rec[i],mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = Tmax)
+      boolean <- (sim$a >= 0.99)
+      if (any(boolean)) {
+        results[repetition] <- which.first(boolean)
+      } else {
+        results[repetition] <- Tmax
+      }
+    }
+    final[i] <- mean(results)
+  }
+  return(final)
+}
+
+times = time(s = s,rec = rec3,Tmax = 4000)
+# log_dist = log(dist)
+smoothingSpline = smooth.spline(x = rec3, y = times, spar=0.35)
+plot(rec3,times, xlab="Recombination rate", ylab="Time of fixation")
+lines(smoothingSpline)
+title(main="Neutral allele fixation time depending on genetic distance between loci")
 
