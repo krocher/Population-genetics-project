@@ -249,19 +249,21 @@ simulation <- function(geno0,Npop,self,rec,mu11,mu12,mu21,mu22,fit,Tmax){
 # Example
 # set.seed(123)
 
-Npop = 1000   # population size
+Npop = 100000   # population size
 nb = 40      # number of s values considered
-rec = 0.01   # recombination rate
+rec = 0   # recombination rate
+Tmax = 1000 # max number of generations for simulation
 
 # 1 example of temporal evolution of neutral allele frequency
 
-fit.matrix <- fitness(0.5,0.1,0.5,0,0,0,0,0) # Two loci with additive selection
-sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,0.5*0.005,0,0,0,0.25*0.995,0.25*0.005,0),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 400)
+fit.matrix <- fitness(0.5,0,0.5,0.1,0,0,0,0) # Two loci with additive selection
+sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = Tmax)
 plot(NULL,xlim = c(0,200),ylim=c(-0.1,1), xlab = "Generations", ylab = "Allele frequencies")
 lines(sim$a,col="darkblue")
 lines(sim$b,col="orange")
 lines(sim$LD,col="black")
 abline(0,0,lty=2)
+title(main="Example of temporal evolution of neutral allele frequency")
 
 # Fixation probability graph for different values of s
 
@@ -269,11 +271,11 @@ freq <- function(nb,rec) {
   s = c(1:nb)/(5*nb)
   final = numeric(length(s))
   for (i in (1:length(s))) {
-    results =logical(10)
-    for (repetition in (1:10)) {
-      fit.matrix <- fitness(0.5,s[i],0.5,0,0,0,0,0) # Two loci with additive selection
-      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = 400)
-      results[repetition] <- (sim$a[400] >= 0.95)
+    results =logical(20)
+    for (repetition in (1:20)) {
+      fit.matrix <- fitness(0.5,0,0.5,s[i],0,0,0,0) # Two loci with additive selection
+      sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = Tmax)
+      results[repetition] <- any(sim$a[Tmax] >= 0.99)
     }
     final[i] <- mean(results)
   }
@@ -294,16 +296,16 @@ title(main="Neutral allele fixation depending on intensity of selection")
 # Haldane mapping function (to convert genetic distance in recombination rates)
 dist = c(10e-5, 5*10e-5, 10e-4, 5*10e-4, 10e-3, 10e-2, 0.1)
 rec2 = 1/2*(1-exp(-2*dist))
-rec3 = seq(10e-5,10e-4,by = 5*10e-6)
+rec3 = seq(1e-5,1e-3,by = 5e-5)
 Tmax = 1000
 
 
 freq2 <- function(s,rec,Tmax) {
   final = numeric(length(rec))
   for (i in (1:length(rec))) {
-    results =logical(50)
-    for (repetition in (1:50)) {
-      fit.matrix <- fitness(0.5,s,0.5,0,0,0,0,0) # Two loci with additive selection
+    results =logical(20)
+    for (repetition in (1:20)) {
+      fit.matrix <- fitness(0.5,0,0.5,s,0,0,0,0) # Two loci with additive selection
       sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec[i],mu11 = 0,mu12 = 0,mu21 = 0,mu22=0,fit = fit.matrix,Tmax = Tmax)
       results[repetition] <- any(sim$a >= 0.99)
       
@@ -316,7 +318,7 @@ freq2 <- function(s,rec,Tmax) {
 
 # Analyse bof bof, pour le recombination rate il vaut mieux regarder le temps de fixation en fonction de la distance génétique
 
-s = 0.01
+s = 0.05
 
 
 final = freq2(s = s,rec = rec3,Tmax = Tmax)
@@ -324,7 +326,7 @@ log_dist = log(dist)
 smoothingSpline = smooth.spline(x = rec3, y = final, spar=0.35)
 plot(rec3,final, xlab="Recombination rate", ylab="Fixation probability")
 lines(smoothingSpline)
-title(main="Neutral allele fixation depending on genetic distance between loci")
+title(main="Neutral allele fixation depending on recombination rate")
 
 library(BBmisc)
 
@@ -354,4 +356,21 @@ smoothingSpline = smooth.spline(x = rec3, y = times, spar=0.35)
 plot(rec3,times, xlab="Recombination rate", ylab="Time of fixation")
 lines(smoothingSpline)
 title(main="Neutral allele fixation time depending on genetic distance between loci")
+
+## Purifying selection
+Npop = 1000   # population size
+nb = 40      # number of s values considered
+rec = 0.5   # recombination rate
+
+# 1 example of temporal evolution of neutral allele frequency
+
+fit.matrix <- fitness(0.5,-0.1,0.5,0,0,0,0,0) # Two loci with additive selection
+sim <- simulation(geno0 = c(0.25*0.995,0,0.5*0.995,1*0.005,0,0,0,0.25*0.995,0,0),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0.001,mu22=0,fit = fit.matrix,Tmax = 400)
+plot(NULL,xlim = c(0,200),ylim=c(-0.1,1), xlab = "Generations", ylab = "Allele frequencies")
+lines(sim$a,col="darkblue")
+lines(sim$b,col="orange")
+lines(sim$LD,col="black")
+abline(0,0,lty=2)
+
+
 
