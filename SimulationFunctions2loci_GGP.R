@@ -405,9 +405,10 @@ title(main="Neutral allele fixation time depending on recombination rate")
 
 
 
-Npop = 1000   # population size
+Npop = 100000   # population size
 nb = 40      # number of s values considered
-rec = 0   # recombination rate
+rec = 0  # recombination rate
+Tmax = 1000
 
 # 1 example of temporal evolution of neutral allele frequency
 
@@ -423,7 +424,7 @@ rec = 0   # recombination rate
 # G44 A1A1;B1B1   1 + sa + sb + eab
 
 fit.matrix <- fitness(0.5,0,0.5,-0.1,0,0,0,0) # Two loci with additive selection
-sim <- simulation(geno0 = c(0.25*0.25,0.25*0.5,0.5*0.25,0.5*0.5,0.25*0.25,0,0.5*0.25,0.25*0.25,0.25*0.5,0.25*0.25),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0.001,mu22=0,fit = fit.matrix,Tmax = 1000)
+sim <- simulation(geno0 = c(0.5,0,0,0,0,0,0,0,0,0.5),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0.001,mu22=0,fit = fit.matrix,Tmax = 1000)
 plot(NULL,xlim = c(0,200),ylim=c(-0.1,1), xlab = "Generations", ylab = "Allele frequencies")
 lines(sim$a,col="darkblue")
 lines(sim$b,col="orange")
@@ -434,5 +435,43 @@ abline(0,0,lty=2)
 
 ## Faire même chose (utiliser mêmes fonctions) pour faire graphiques avec la nouvelle fitness, la nouvelle distribution d'haplotypes, le mutation rate 2-1 d'au dessus
 
+
+# 1 example of temporal evolution of neutral allele frequency
+
+# G11 A0A0;B0B0   1
+# G12 A0A0;B1B0   1 + hb*sb
+# G13 A0A1;B0B0   1 + ha*sa   
+# G14 A0A1;B0B1   1 + ha*sa + hb*sb + ehh
+# G22 A0A0;B1B1   1 + sb
+# G23 A0A1;B0B1   1 + ha*sa + hb*sb + ehh
+# G24 A0A1;B1B1   1 + ha*sa + sb + ehb
+# G33 A1A1;B0B0   1 + sa
+# G34 A1A1;B0B1   1 + sa + hb*sb + eah
+# G44 A1A1;B1B1   1 + sa + sb + eab
+
+
+freq <- function(nb,rec) {
+  s = (-1)*c(1:nb)/(5*nb)
+  final = numeric(length(s))
+  for (i in (1:length(s))) {
+    results =logical(20)
+    for (repetition in (1:20)) {
+      fit.matrix <- fitness(0.5,0,0.5,s[i],0,0,0,0) # Two loci with additive selection
+      sim <- simulation(geno0 = c(0.5,0,0,0,0,0,0,0,0,0.5),Npop = Npop,self = 0,rec=rec,mu11 = 0,mu12 = 0,mu21 = 0.001,mu22=0,fit = fit.matrix,Tmax = Tmax)
+      results[repetition] <- (sim$a[Tmax] <= 0.01)
+    }
+    final[i] <- mean(results)
+  }
+  return(final)
+}
+
+
+
+s = - c(1:nb)/(5*nb)
+final = freq(nb = nb,rec = rec)
+smoothingSpline = smooth.spline(x = s, y = final, spar=0.35)
+plot(s,final,  xlab="Selection coefficient", ylab="Disappearing probability",xlim = c(-0.2,0))
+lines(smoothingSpline)
+title(main="Neutral allele disappearance depending on intensity of selection")
 
 
